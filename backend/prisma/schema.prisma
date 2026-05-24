@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum RecognitionSource {
+  IMAGE_UPLOAD
+  CAMERA_FRAME
+  CAMERA_STREAM
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Owner {
+  id        Int       @id @default(autoincrement())
+  fullName  String    @map("full_name")
+  phone     String?
+  email     String?
+  address   String?
+  vehicles  Vehicle[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("owners")
+}
+
+model Vehicle {
+  id                    Int              @id @default(autoincrement())
+  plateNumber           String           @unique @map("plate_number")
+  normalizedPlateNumber String           @unique @map("normalized_plate_number")
+  ownerId               Int?             @map("owner_id")
+  owner                 Owner?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  vehicleType           String?          @map("vehicle_type")
+  brand                 String?
+  color                 String?
+  province              String?
+  note                  String?
+  logs                  RecognitionLog[]
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  @@index([plateNumber])
+  @@index([normalizedPlateNumber])
+  @@map("vehicles")
+}
+
+model Camera {
+  id        Int              @id @default(autoincrement())
+  name      String
+  sourceUrl String?          @map("source_url")
+  location  String?
+  isActive  Boolean          @default(true) @map("is_active")
+  logs      RecognitionLog[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("cameras")
+}
+
+model RecognitionLog {
+  id                    Int               @id @default(autoincrement())
+  plateNumber           String            @map("plate_number")
+  normalizedPlateNumber String            @map("normalized_plate_number")
+  vehicleId             Int?              @map("vehicle_id")
+  vehicle               Vehicle?          @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  cameraId              Int?              @map("camera_id")
+  camera                Camera?           @relation(fields: [cameraId], references: [id], onDelete: SetNull)
+  source                RecognitionSource @default(IMAGE_UPLOAD)
+  provinceCode          String?           @map("province_code")
+  province              String?
+  ownerNameSnapshot     String?           @map("owner_name_snapshot")
+  confidence            Float?
+  bbox                  Json?
+  imagePath             String?           @map("image_path")
+  annotatedImagePath    String?           @map("annotated_image_path")
+  rawResult             Json?             @map("raw_result")
+  recognizedAt          DateTime          @default(now()) @map("recognized_at")
+  createdAt             DateTime          @default(now()) @map("created_at")
+
+  @@index([plateNumber])
+  @@index([normalizedPlateNumber])
+  @@index([recognizedAt])
+  @@map("recognition_logs")
+}

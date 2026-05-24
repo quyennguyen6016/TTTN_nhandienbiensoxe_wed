@@ -1,0 +1,6 @@
+
+> license-plate-backend@0.1.0 dev
+> node --watch src/server.js
+
+Backend listening on http://localhost:3000
+[0mGET /health [32m200[0m 2.438 ms - 64[0m
