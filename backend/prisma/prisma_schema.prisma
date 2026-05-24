@@ -1,0 +1,53 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Owner {
+  id    String @id @default(cuid())
+  name  String
+  phone String?
+  email String?
+
+  vehicles Vehicle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vehicle {
+  id            String @id @default(cuid())
+  plateNumber   String @unique
+  ownerId       String
+  owner         Owner  @relation(fields: [ownerId], references: [id])
+  
+  recognitions  Recognition[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Recognition {
+  id          String  @id @default(cuid())
+  imageData   String  @db.Text // base64 hoặc URL
+  plateNumber String?
+  confidence  Float?
+  
+  status      String  @default("PENDING") // PENDING, COMPLETED, FAILED
+  
+  vehicleId   String?
+  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
+  
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([status])
+  @@index([vehicleId])
+}
