@@ -4,9 +4,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
-BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 def _bool_from_env(name, default):
@@ -30,6 +29,15 @@ def _list_from_env(name, default):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _resolve_path(value, default: Path) -> Path:
+    if not value:
+        return default
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    return PROJECT_ROOT / path
+
+
 @dataclass(frozen=True)
 class Settings:
     model_path: Path
@@ -41,11 +49,14 @@ class Settings:
 
 
 settings = Settings(
-    model_path=Path(
-        os.getenv(
-            "PLATE_MODEL_PATH",
-            BASE_DIR / "runs" / "detect" / "train_bien_so_100epoch" / "weights" / "best.pt",
-        )
+    model_path=_resolve_path(
+        os.getenv("PLATE_MODEL_PATH"),
+        PROJECT_ROOT
+        / "runs"
+        / "detect"
+        / "train_bien_so_100epoch"
+        / "weights"
+        / "best.pt",
     ),
     easyocr_gpu=_bool_from_env("EASYOCR_GPU", True),
     ocr_languages=_list_from_env("OCR_LANGUAGES", ["vi"]),

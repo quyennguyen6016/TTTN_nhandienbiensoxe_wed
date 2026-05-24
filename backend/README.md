@@ -9,7 +9,7 @@ Backend API for the license plate recognition system.
 - Prisma
 - PostgreSQL
 - Multer for image upload
-- Python AI core through `recognize_image.py`
+- Python AI core through `ai/` package (`python -m ai.worker`, `python -m ai.recognize`)
 
 ## Setup
 
@@ -24,7 +24,9 @@ Edit `.env`:
 ```env
 DATABASE_URL="postgresql://postgres:your_password@localhost:5432/license_plate_db?schema=public"
 PYTHON_EXECUTABLE=python
-AI_SCRIPT_PATH=../recognize_image.py
+AI_RECOGNIZE_MODULE=ai.recognize
+AI_WORKER_MODULE=ai.worker
+AI_USE_WORKER=true
 ```
 
 Create the PostgreSQL database:
@@ -98,10 +100,7 @@ Response shape:
 
 ## Notes
 
-- The backend currently calls the Python AI core with `child_process`.
-- This is good enough for MVP upload recognition.
-- For realtime camera, the next upgrade should wrap the Python AI core in a
-  long-running Python HTTP service so the model is loaded once instead of once
-  per request.
+- The backend calls the Python package from the project root via `python -m ai.worker`
+  (persistent, models loaded once) with fallback to `python -m ai.recognize`.
 - Database design details are in `../docs/postgresql-design.md`.
 - API details are in `../docs/backend-api.md`.

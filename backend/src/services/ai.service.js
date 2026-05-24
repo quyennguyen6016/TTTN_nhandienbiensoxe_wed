@@ -6,6 +6,13 @@ const { config } = require("../config");
 
 const WORKER_REQUEST_TIMEOUT_MS = Number(process.env.AI_WORKER_TIMEOUT_MS || 120000);
 
+function pythonSpawnOptions() {
+  return {
+    cwd: config.projectRoot,
+    windowsHide: true,
+  };
+}
+
 class AiWorkerClient {
   constructor() {
     this.process = null;
@@ -30,10 +37,14 @@ class AiWorkerClient {
       this.resolveReady = resolve;
       this.rejectReady = reject;
 
-      this.process = spawn(config.pythonExecutable, [config.aiWorkerScriptPath], {
-        stdio: ["pipe", "pipe", "pipe"],
-        windowsHide: true,
-      });
+      this.process = spawn(
+        config.pythonExecutable,
+        ["-m", config.aiWorkerModule],
+        {
+          stdio: ["pipe", "pipe", "pipe"],
+          ...pythonSpawnOptions(),
+        }
+      );
 
       this.process.stdout.on("data", (chunk) => {
         this.handleStdout(chunk.toString());
@@ -202,12 +213,11 @@ function buildAnnotatedPath(imagePath) {
 
 function recognizeImageOnce(imagePath, annotatedPath) {
   return new Promise((resolve, reject) => {
-    const child = spawn(config.pythonExecutable, [
-      config.aiScriptPath,
-      imagePath,
-      "--save-annotated",
-      annotatedPath,
-    ], { windowsHide: true });
+    const child = spawn(
+      config.pythonExecutable,
+      ["-m", config.aiRecognizeModule, imagePath, "--save-annotated", annotatedPath],
+      pythonSpawnOptions()
+    );
 
     let stdout = "";
     let stderr = "";

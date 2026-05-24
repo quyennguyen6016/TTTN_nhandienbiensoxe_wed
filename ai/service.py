@@ -5,17 +5,13 @@ import cv2
 import easyocr
 from ultralytics import YOLO
 
-from app_config import settings
-from bien_so_map import BIEN_SO_MAP
-from bien_so_map_dau import BIEN_SO_MAP_DAU
+from ai.config import settings
+from ai.data.bien_so_map import BIEN_SO_MAP
+from ai.data.bien_so_map_dau import BIEN_SO_MAP_DAU
 
 
 class PlateRecognitionService:
-    """Core AI service for plate detection and OCR.
-
-    This class has no Tkinter dependency, so it can be reused later by a
-    Python API service that is called from the Node.js backend.
-    """
+    """Core AI service for plate detection and OCR."""
 
     def __init__(
         self,
@@ -32,7 +28,7 @@ class PlateRecognitionService:
         if not self.model_path.exists():
             raise FileNotFoundError(
                 f"YOLO model not found: {self.model_path}. "
-                "Update PLATE_MODEL_PATH in .env or app_config.py."
+                "Update PLATE_MODEL_PATH in .env or ai/config.py."
             )
 
         self.inference_imgsz = settings.inference_imgsz

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import cv2
 
-from chuc_nang import PlateRecognitionService
+from ai.service import PlateRecognitionService
 
 
 def write_message(payload: dict) -> None:

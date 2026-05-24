@@ -20,12 +20,21 @@ UI has been removed because the project is being migrated to:
 
 - `backend/`: Node.js API server with Express, Prisma, and PostgreSQL.
 - `frontend/`: React + Vite user interface.
-- `chuc_nang.py`: reusable AI recognition service.
-- `app_config.py`: environment-based configuration.
-- `recognize_image.py`: CLI helper that returns JSON for a recognized image.
-- `bien_so_map.py`: province-code map without accents.
-- `bien_so_map_dau.py`: province-code map with Vietnamese display names.
+- `ai/`: Python AI package (config, service, worker, CLI, province maps).
 - `runs/detect/.../weights/best.pt`: trained YOLO model weights.
+
+### Python AI layout
+
+```text
+ai/
+  config.py          # .env settings (model path, GPU, inference size)
+  service.py         # PlateRecognitionService (YOLO + EasyOCR)
+  worker.py          # long-running worker for Node.js backend
+  recognize.py       # one-shot CLI (JSON output)
+  data/
+    bien_so_map.py       # province codes without accents
+    bien_so_map_dau.py   # province codes with Vietnamese diacritics
+```
 
 Owner names come from PostgreSQL (`Vehicle` → `Owner`). Plates without a registered vehicle are shown as **Vãng lai** in the API/UI.
 
@@ -49,12 +58,11 @@ EASYOCR_GPU=false
 ## Run image recognition from CLI
 
 ```powershell
-python recognize_image.py path/to/image.jpg --save-annotated outputs/result.jpg
+python -m ai.recognize path/to/image.jpg --save-annotated outputs/result.jpg
 ```
 
-The command prints JSON. In the first Node.js backend version, Node can call this
-script through `child_process`. Later, this same core can be wrapped in a small
-Python HTTP service if realtime camera performance needs to improve.
+The command prints JSON. The Node.js backend calls `python -m ai.worker` (persistent)
+or `python -m ai.recognize` (fallback) from the project root.
 
 ## Node.js backend
 

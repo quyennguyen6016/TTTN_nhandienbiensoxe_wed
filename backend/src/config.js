@@ -10,14 +10,8 @@ const config = {
     ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
     : ["http://localhost:5173", "http://127.0.0.1:5173"],
   pythonExecutable: process.env.PYTHON_EXECUTABLE || "python",
-  aiScriptPath: path.resolve(
-    backendRoot,
-    process.env.AI_SCRIPT_PATH || "../recognize_image.py"
-  ),
-  aiWorkerScriptPath: path.resolve(
-    backendRoot,
-    process.env.AI_WORKER_SCRIPT_PATH || "../ai_worker.py"
-  ),
+  aiRecognizeModule: process.env.AI_RECOGNIZE_MODULE || "ai.recognize",
+  aiWorkerModule: process.env.AI_WORKER_MODULE || "ai.worker",
   aiUseWorker: process.env.AI_USE_WORKER !== "false",
   uploadDir: path.resolve(backendRoot, process.env.UPLOAD_DIR || "uploads/original"),
   annotatedDir: path.resolve(
