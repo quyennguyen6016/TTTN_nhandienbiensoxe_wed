@@ -1167,7 +1167,7 @@ function App() {
                 </div>
                 <div className="config-list">
                   <ConfigItem icon={Database} label="API Base URL" value={API_BASE_URL} />
-                  <ConfigItem icon={Gauge} label="AI Core" value="YOLO + EasyOCR qua Node.js backend" />
+                  <ConfigItem icon={Gauge} label="AI Core" value="YOLO + PaddleOCR qua Node.js backend" />
                   <ConfigItem icon={Power} label="Trạng thái API" value={serverState} />
                 </div>
               </section>
