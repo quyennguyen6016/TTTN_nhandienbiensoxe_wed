@@ -63,7 +63,7 @@ export type RecognitionLog = {
 export type RecognitionSummary = {
   totalLogs: number;
   totalVehicles: number;
-  totalOwners: number;
+  totalOwners: number; 
   totalCameras: number;
   recentLogs: RecognitionLog[];
 };
