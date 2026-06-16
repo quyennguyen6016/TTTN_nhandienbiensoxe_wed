@@ -13,7 +13,7 @@ UI has been removed because the project is being migrated to:
 - Python
 - OpenCV
 - Ultralytics YOLO
-- EasyOCR
+- PaddleOCR
 - python-dotenv
 
 ## Important files
@@ -28,7 +28,7 @@ UI has been removed because the project is being migrated to:
 ```text
 ai/
   config.py          # .env settings (model path, GPU, inference size)
-  service.py         # PlateRecognitionService (YOLO + EasyOCR)
+  service.py         # PlateRecognitionService (YOLO + PaddleOCR)
   worker.py          # long-running worker for Node.js backend
   recognize.py       # one-shot CLI (JSON output)
   data/
@@ -49,10 +49,11 @@ copy .env.example .env
 
 Edit `.env` if your model path, camera index, or GPU setting is different.
 
-If the machine does not have a compatible CUDA/GPU setup, set:
+PaddleOCR uses CPU by default in this project. To enable GPU, install the
+matching GPU PaddlePaddle package for your CUDA setup and set:
 
 ```env
-EASYOCR_GPU=false
+PADDLEOCR_USE_GPU=true
 ```
 
 ## Run image recognition from CLI

@@ -41,8 +41,11 @@ def _resolve_path(value, default: Path) -> Path:
 @dataclass(frozen=True)
 class Settings:
     model_path: Path
-    easyocr_gpu: bool
+    paddleocr_use_gpu: bool
+    paddleocr_use_textline_orientation: bool
     ocr_languages: list[str]
+    paddleocr_version: str | None
+    ocr_preprocess_mode: str
     detection_interval: int
     max_inference_edge: int
     inference_imgsz: int
@@ -58,8 +61,14 @@ settings = Settings(
         / "weights"
         / "best.pt",
     ),
-    easyocr_gpu=_bool_from_env("EASYOCR_GPU", True),
-    ocr_languages=_list_from_env("OCR_LANGUAGES", ["vi"]),
+    paddleocr_use_gpu=_bool_from_env("PADDLEOCR_USE_GPU", False),
+    paddleocr_use_textline_orientation=_bool_from_env(
+        "PADDLEOCR_USE_TEXTLINE_ORIENTATION",
+        False,
+    ),
+    ocr_languages=_list_from_env("PADDLEOCR_LANGUAGES", _list_from_env("OCR_LANGUAGES", ["vi"])),
+    paddleocr_version=os.getenv("PADDLEOCR_VERSION"),
+    ocr_preprocess_mode=os.getenv("OCR_PREPROCESS_MODE", "fast").strip().lower(),
     detection_interval=_int_from_env("DETECTION_INTERVAL", 15),
     max_inference_edge=_int_from_env("MAX_INFERENCE_EDGE", 1280),
     inference_imgsz=_int_from_env("INFERENCE_IMGSZ", 640),

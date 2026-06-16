@@ -141,7 +141,6 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<UploadRecognitionResponse | null>(null);
-  const [uploadCameraId, setUploadCameraId] = useState<number | "">("");
   const [realtimeCameraId, setRealtimeCameraId] = useState<number | "">("");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -311,7 +310,7 @@ function App() {
     setNotice(null);
     try {
       const preparedFile = await prepareImageForUpload(selectedFile);
-      const data = await uploadPlateImage(preparedFile, uploadCameraId);
+      const data = await uploadPlateImage(preparedFile);
       setResult(data);
       if (!data.duplicateSkipped) {
         setHistory((current) => [data.log, ...current.filter((item) => item.id !== data.log.id)]);
@@ -581,19 +580,6 @@ function App() {
                     <h2>Upload ảnh biển số</h2>
                     <p>Gửi ảnh qua Node.js API và lưu lịch sử PostgreSQL.</p>
                   </div>
-                  <select
-                    value={uploadCameraId}
-                    onChange={(event) =>
-                      setUploadCameraId(event.target.value ? Number(event.target.value) : "")
-                    }
-                  >
-                    <option value="">Không gắn camera</option>
-                    {activeCameras.map((cameraRecord) => (
-                      <option key={cameraRecord.id} value={cameraRecord.id}>
-                        {cameraRecord.name}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 <div
@@ -1167,7 +1153,7 @@ function App() {
                 </div>
                 <div className="config-list">
                   <ConfigItem icon={Database} label="API Base URL" value={API_BASE_URL} />
-                  <ConfigItem icon={Gauge} label="AI Core" value="YOLO + EasyOCR qua Node.js backend" />
+                  <ConfigItem icon={Gauge} label="AI Core" value="YOLO + PaddleOCR qua Node.js backend" />
                   <ConfigItem icon={Power} label="Trạng thái API" value={serverState} />
                 </div>
               </section>
