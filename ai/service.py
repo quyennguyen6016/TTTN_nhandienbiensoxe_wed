@@ -61,11 +61,11 @@ class PlateRecognitionService:
                 enable_mkldnn=False,
                 use_doc_orientation_classify=False,
                 use_doc_unwarping=False,
-                use_textline_orientation=True,
+                use_textline_orientation=settings.paddleocr_use_textline_orientation,
             )
         except TypeError:
             return PaddleOCR(
-                use_angle_cls=True,
+                use_angle_cls=settings.paddleocr_use_textline_orientation,
                 lang=lang,
                 use_gpu=self.use_gpu,
                 show_log=False,
@@ -199,12 +199,18 @@ class PlateRecognitionService:
             8,
         )
 
-        return [
+        variants = [
             enlarged,
-            cv2.cvtColor(contrast, cv2.COLOR_GRAY2BGR),
             cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR),
-            cv2.cvtColor(threshold, cv2.COLOR_GRAY2BGR),
         ]
+        if settings.ocr_preprocess_mode == "accurate":
+            variants.extend(
+                [
+                    cv2.cvtColor(contrast, cv2.COLOR_GRAY2BGR),
+                    cv2.cvtColor(threshold, cv2.COLOR_GRAY2BGR),
+                ]
+            )
+        return variants
 
     def _read_plate_text(self, crop):
         best_text = ""
@@ -215,6 +221,8 @@ class PlateRecognitionService:
             text = self._normalize_plate_text(raw_text)
             if not text:
                 continue
+            if confidence and confidence >= 0.88 and self._extract_province_code(text) in BIEN_SO_MAP:
+                return text, confidence
             if self._is_better_ocr_text(text, confidence, best_text, best_confidence):
                 best_text = text
                 best_confidence = confidence
