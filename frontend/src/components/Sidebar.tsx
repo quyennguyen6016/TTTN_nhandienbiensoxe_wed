@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
-  LayoutDashboard, ScanLine, Camera, History,
-  Car, Users, Settings, ChevronLeft, ChevronRight, LogOut,
+  Camera, Car, ChevronLeft, ChevronRight,
+  History, LayoutDashboard, LogOut, ScanLine,
+  Settings, Users,
 } from 'lucide-react';
 
 export type ViewType =
@@ -9,27 +10,28 @@ export type ViewType =
   | 'history' | 'vehicles' | 'owners' | 'settings';
 
 const menuItems: { id: ViewType; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'dashboard',    label: 'Dashboard',       icon: LayoutDashboard },
-  { id: 'recognition',  label: 'Nhận diện ảnh',   icon: ScanLine },
-  { id: 'camera',       label: 'Camera realtime',  icon: Camera },
-  { id: 'history',      label: 'Lịch sử',          icon: History },
-  { id: 'vehicles',     label: 'Xe',               icon: Car },
-  { id: 'owners',       label: 'Chủ xe',           icon: Users },
-  { id: 'settings',     label: 'Cấu hình',         icon: Settings },
+  { id: 'dashboard',   label: 'Dashboard',       icon: LayoutDashboard },
+  { id: 'recognition', label: 'Nhận diện ảnh',   icon: ScanLine },
+  { id: 'camera',      label: 'Camera realtime',  icon: Camera },
+  { id: 'history',     label: 'Lịch sử',          icon: History },
+  { id: 'vehicles',    label: 'Xe',               icon: Car },
+  { id: 'owners',      label: 'Chủ xe',           icon: Users },
+  { id: 'settings',    label: 'Cấu hình',         icon: Settings },
 ];
 
 interface SidebarProps {
   activeView: ViewType;
   setActiveView: (v: ViewType) => void;
+  onLogout: () => void;
 }
 
-export function Sidebar({ activeView, setActiveView }: SidebarProps) {
+export function Sidebar({ activeView, setActiveView, onLogout }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       {/* Brand */}
-      <a className="sidebar-brand" href="#dashboard" onClick={() => setActiveView('dashboard')}>
+      <a className="sidebar-brand" href="#" onClick={e => { e.preventDefault(); setActiveView('dashboard'); }}>
         <div className="sidebar-brand-icon">
           <ScanLine size={18} />
         </div>
@@ -54,9 +56,9 @@ export function Sidebar({ activeView, setActiveView }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* Footer — logout */}
       <div className="sidebar-footer">
-        <button>
+        <button onClick={onLogout}>
           <LogOut size={16} />
           <span>Đăng xuất</span>
         </button>
