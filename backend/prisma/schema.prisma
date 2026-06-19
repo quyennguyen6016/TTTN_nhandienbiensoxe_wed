@@ -10,6 +10,7 @@ datasource db {
 enum UserRole {
   ADMIN
   USER
+  PENDING
 }
 
 enum RecognitionSource {
@@ -19,12 +20,16 @@ enum RecognitionSource {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  passwordHash String   @map("password_hash")
-  role         UserRole @default(USER)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id           Int              @id @default(autoincrement())
+  username     String           @unique
+  passwordHash String           @map("password_hash")
+  fullName     String?          @map("full_name")
+  email        String?          @unique
+  role         UserRole         @default(PENDING)
+  isActive     Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  logs         RecognitionLog[]
 
   @@map("users")
 }
@@ -83,6 +88,8 @@ model RecognitionLog {
   vehicle               Vehicle?          @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   cameraId              Int?              @map("camera_id")
   camera                Camera?           @relation(fields: [cameraId], references: [id], onDelete: SetNull)
+  createdById           Int?              @map("created_by")
+  createdBy             User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
   source                RecognitionSource @default(IMAGE_UPLOAD)
   provinceCode          String?           @map("province_code")
   province              String?

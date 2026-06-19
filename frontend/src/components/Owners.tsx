@@ -9,6 +9,7 @@ interface OwnersProps {
   owners: Owner[];
   onOwnersChange: (o: Owner[]) => void;
   onNotice: (msg: string) => void;
+  isAdmin: boolean;   // ← thêm dòng này
 }
 
 export function Owners({ owners, onOwnersChange, onNotice }: OwnersProps) {

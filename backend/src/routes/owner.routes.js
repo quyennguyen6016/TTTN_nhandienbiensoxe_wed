@@ -7,9 +7,11 @@ const {
   parseId,
   requiredString,
 } = require("../utils/http-error");
+const { adminOnly } = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
+// USER và ADMIN đều xem được
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -43,11 +45,12 @@ router.get(
   })
 );
 
+// Chỉ ADMIN mới thêm / sửa / xóa
 router.post(
   "/",
+  adminOnly,
   asyncHandler(async (req, res) => {
     const { fullName, phone, email, address } = req.body;
-
     const owner = await prisma.owner.create({
       data: {
         fullName: requiredString(fullName, "fullName"),
@@ -62,10 +65,10 @@ router.post(
 
 router.put(
   "/:id",
+  adminOnly,
   asyncHandler(async (req, res) => {
     const id = parseId(req.params.id);
     const { fullName, phone, email, address } = req.body;
-
     const owner = await prisma.owner.update({
       where: { id },
       data: {
@@ -76,13 +79,13 @@ router.put(
       },
       include: { vehicles: true },
     });
-
     res.json({ success: true, data: owner });
   })
 );
 
 router.delete(
   "/:id",
+  adminOnly,
   asyncHandler(async (req, res) => {
     const id = parseId(req.params.id);
     await prisma.owner.delete({ where: { id } });

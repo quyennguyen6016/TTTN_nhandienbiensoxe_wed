@@ -15,6 +15,7 @@ interface VehiclesProps {
   onOwnersChange: (o: Owner[]) => void;
   onNavigateToOwners: () => void;
   onNotice: (msg: string) => void;
+  isAdmin: boolean;   // ← thêm dòng này
 }
 
 export function Vehicles({ vehicles, owners, onVehiclesChange, onOwnersChange, onNavigateToOwners, onNotice }: VehiclesProps) {

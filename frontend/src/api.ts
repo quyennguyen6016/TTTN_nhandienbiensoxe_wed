@@ -63,7 +63,7 @@ export type RecognitionLog = {
 export type RecognitionSummary = {
   totalLogs: number;
   totalVehicles: number;
-  totalOwners: number; 
+  totalOwners: number;
   totalCameras: number;
   recentLogs: RecognitionLog[];
 };
@@ -111,13 +111,14 @@ type ApiEnvelope<T> = {
   message?: string;
 };
 
+// ─── Lấy token từ sessionStorage (dùng chung với auth.ts) ────────────────────
+function getAuthToken(): string | null {
+  return sessionStorage.getItem("pv_token");
+}
+
 function assetUrl(path: string | null) {
-  if (!path) {
-    return null;
-  }
-  if (path.startsWith("http")) {
-    return path;
-  }
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
   return `${API_BASE_URL}${path}`;
 }
 
@@ -130,8 +131,14 @@ function normalizeLog(log: RecognitionLog): RecognitionLog {
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  if (response.status === 204) {
-    return undefined as T;
+  if (response.status === 204) return undefined as T;
+
+  // Token hết hạn hoặc không hợp lệ → reload về trang login
+  if (response.status === 401) {
+    sessionStorage.removeItem("pv_token");
+    sessionStorage.removeItem("pv_user");
+    window.location.reload();
+    throw new Error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
   }
 
   const payload = (await response.json()) as ApiEnvelope<T>;
@@ -141,14 +148,22 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return payload.data;
 }
 
+// ─── Hàm request trung tâm — tự động gắn token vào mọi request ───────────────
 async function request<T>(path: string, init?: RequestInit) {
+  const token = getAuthToken();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
+      // Không set Content-Type cho FormData (browser tự set boundary)
       ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      // Tự động gắn token nếu có
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Cho phép override từ bên ngoài nếu cần
       ...init?.headers,
     },
   });
+
   return parseResponse<T>(response);
 }
 
@@ -163,6 +178,8 @@ function queryString(params: Record<string, string | number | undefined>) {
   return value ? `?${value}` : "";
 }
 
+// ─── API functions — giữ nguyên signature, không cần truyền token ─────────────
+
 export async function checkHealth() {
   return request<{ status: string; service: string }>("/health");
 }
@@ -175,13 +192,15 @@ export async function fetchRecognitionSummary() {
   };
 }
 
-export async function fetchRecognitionHistory(filters: {
-  plateNumber?: string;
-  cameraId?: string;
-  from?: string;
-  to?: string;
-  limit?: number;
-} = {}) {
+export async function fetchRecognitionHistory(
+  filters: {
+    plateNumber?: string;
+    cameraId?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+  } = {}
+) {
   const logs = await request<RecognitionLog[]>(
     `/api/recognitions${queryString({ limit: 50, ...filters })}`
   );
@@ -199,9 +218,7 @@ export async function uploadPlateImage(
 ) {
   const formData = new FormData();
   formData.append("image", file);
-  if (cameraId) {
-    formData.append("cameraId", String(cameraId));
-  }
+  if (cameraId) formData.append("cameraId", String(cameraId));
   formData.append("source", source);
 
   const data = await request<UploadRecognitionResponse>("/api/recognitions/image", {
@@ -209,10 +226,7 @@ export async function uploadPlateImage(
     body: formData,
   });
 
-  return {
-    ...data,
-    log: normalizeLog(data.log),
-  };
+  return { ...data, log: normalizeLog(data.log) };
 }
 
 export async function fetchOwners(search = "") {

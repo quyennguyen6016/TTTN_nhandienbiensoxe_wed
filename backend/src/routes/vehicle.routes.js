@@ -9,9 +9,11 @@ const {
   requiredString,
 } = require("../utils/http-error");
 const { normalizePlateNumber } = require("../utils/plate");
+const { adminOnly } = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
+// USER và ADMIN đều xem được
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -21,12 +23,7 @@ router.get(
       where: search
         ? {
             OR: [
-              {
-                normalizedPlateNumber: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
+              { normalizedPlateNumber: { contains: normalizedSearch, mode: "insensitive" } },
               { plateNumber: { contains: search, mode: "insensitive" } },
               { brand: { contains: search, mode: "insensitive" } },
               { owner: { fullName: { contains: search, mode: "insensitive" } } },
@@ -48,30 +45,19 @@ router.get(
       where: { id },
       include: {
         owner: true,
-        logs: {
-          orderBy: { recognizedAt: "desc" },
-          take: 20,
-          include: { camera: true },
-        },
+        logs: { orderBy: { recognizedAt: "desc" }, take: 20, include: { camera: true } },
       },
     });
     res.json({ success: true, data: vehicle });
   })
 );
 
+// Chỉ ADMIN mới thêm / sửa / xóa
 router.post(
   "/",
+  adminOnly,
   asyncHandler(async (req, res) => {
-    const {
-      plateNumber,
-      ownerId,
-      ownerName,
-      vehicleType,
-      brand,
-      color,
-      province,
-      note,
-    } = req.body;
+    const { plateNumber, ownerId, ownerName, vehicleType, brand, color, province, note } = req.body;
 
     const cleanPlateNumber = requiredString(plateNumber, "plateNumber");
     const normalizedPlateNumber = normalizePlateNumber(cleanPlateNumber);
@@ -108,18 +94,10 @@ router.post(
 
 router.put(
   "/:id",
+  adminOnly,
   asyncHandler(async (req, res) => {
     const id = parseId(req.params.id);
-    const {
-      plateNumber,
-      ownerId,
-      ownerName,
-      vehicleType,
-      brand,
-      color,
-      province,
-      note,
-    } = req.body;
+    const { plateNumber, ownerId, ownerName, vehicleType, brand, color, province, note } = req.body;
 
     const cleanPlateNumber = requiredString(plateNumber, "plateNumber");
     const normalizedPlateNumber = normalizePlateNumber(cleanPlateNumber);
@@ -157,6 +135,7 @@ router.put(
 
 router.delete(
   "/:id",
+  adminOnly,
   asyncHandler(async (req, res) => {
     const id = parseId(req.params.id);
     await prisma.vehicle.delete({ where: { id } });
