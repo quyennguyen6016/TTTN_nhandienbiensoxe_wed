@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Bell, RefreshCw, Search, UserCircle, X } from 'lucide-react';
+import { AlertCircle, Bell, RefreshCw, UserCircle, X } from 'lucide-react';
 import {
   CameraRecord, Owner, Pagination, RecognitionLog, RecognitionSummary, Vehicle,
   checkHealth, fetchCameras, fetchMyHistory, fetchOwners, fetchRecognitionHistory,
@@ -134,11 +134,7 @@ function MainApp({ onLogout }: { onLogout: () => void }) {
       <div className="main-shell">
         {/* ── Topbar ─────────────────────────────────────────────────── */}
         <header className="topbar">
-          <div className="topbar-search">
-            <Search size={15} />
-            <input type="text" placeholder="KHỐI DỮ LIỆU... [BIỂN SỐ / CHỦ XE]" />
-          </div>
-          <div className="topbar-right">
+          <div className="topbar-right" style={{ marginLeft: 'auto' }}>
             <div className={`status-badge${
               serverState === 'offline' ? ' offline' :
               serverState === 'checking' ? ' checking' : ''

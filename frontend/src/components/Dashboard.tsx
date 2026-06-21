@@ -12,10 +12,10 @@ interface DashboardProps {
 
 export function Dashboard({ summary, history, onNavigate, onReload }: DashboardProps) {
   const stats = [
-    { label: 'Total Scans',      value: summary?.totalLogs     ?? 0, icon: BarChart3, color: 'var(--accent)',   bg: 'var(--accent-dim)', progress: 75 },
-    { label: 'Xe đã đăng ký',   value: summary?.totalVehicles ?? 0, icon: Car,       color: '#34d399',          bg: 'var(--green-dim)',  progress: null },
-    { label: 'Chủ xe',           value: summary?.totalOwners   ?? 0, icon: Users,     color: '#c084fc',          bg: 'rgba(192,132,252,.1)', progress: null },
-    { label: 'Camera',           value: summary?.totalCameras  ?? 0, icon: Camera,    color: 'var(--amber)',     bg: 'rgba(245,158,11,.1)', progress: null },
+    { label: 'Total Scans',      value: summary?.totalLogs     ?? 0, icon: BarChart3, color: 'var(--accent)',   bg: 'var(--accent-dim)' },
+    { label: 'Xe đã đăng ký',   value: summary?.totalVehicles ?? 0, icon: Car,       color: '#34d399',          bg: 'var(--green-dim)' },
+    { label: 'Chủ xe',           value: summary?.totalOwners   ?? 0, icon: Users,     color: '#c084fc',          bg: 'rgba(192,132,252,.1)' },
+    { label: 'Camera',           value: summary?.totalCameras  ?? 0, icon: Camera,    color: 'var(--amber)',     bg: 'rgba(245,158,11,.1)' },
   ];
 
   return (
@@ -50,15 +50,9 @@ export function Dashboard({ summary, history, onNavigate, onReload }: DashboardP
               </div>
               <div className="metric-card-label">{s.label}</div>
               <div className="metric-card-value">{s.value.toLocaleString()}</div>
-              {s.progress !== null ? (
-                <div className="metric-card-bar">
-                  <div className="metric-card-bar-fill" style={{ width: `${s.progress}%` }} />
-                </div>
-              ) : (
-                <div className="metric-card-sub" style={{ color: s.color }}>
-                  {s.value > 0 ? `${s.value} bản ghi` : 'Chưa có dữ liệu'}
-                </div>
-              )}
+              <div className="metric-card-sub" style={{ color: s.color }}>
+                {s.value > 0 ? `${s.value} bản ghi` : 'Chưa có dữ liệu'}
+              </div>
             </div>
           );
         })}
