@@ -70,6 +70,7 @@ async function createRecognitionLog({
   return { log, duplicateSkipped: false };
 }
 
+// ─── Phân trang: page (1-indexed) + pageSize, trả kèm tổng số bản ghi ────────
 async function listRecognitionLogs({
   plateNumber,
   cameraId,
@@ -77,7 +78,10 @@ async function listRecognitionLogs({
   source,
   from,
   to,
-  limit = 50,
+  page = 1,
+  pageSize = 50,
+  // Giữ "limit" để tương thích ngược nếu nơi khác còn gọi kiểu cũ
+  limit,
 }) {
   const where = {};
 
@@ -106,19 +110,37 @@ async function listRecognitionLogs({
     }
   }
 
-  return prisma.recognitionLog.findMany({
-    where,
-    orderBy: { recognizedAt: "desc" },
-    take: Math.min(Number(limit) || 50, 200),
-    include: {
-      vehicle: {
-        include: {
-          owner: true,
+  const cleanPageSize = Math.min(Number(limit || pageSize) || 50, 200);
+  const cleanPage = Math.max(Number(page) || 1, 1);
+  const skip = (cleanPage - 1) * cleanPageSize;
+
+  const [logs, totalCount] = await Promise.all([
+    prisma.recognitionLog.findMany({
+      where,
+      orderBy: { recognizedAt: "desc" },
+      skip,
+      take: cleanPageSize,
+      include: {
+        vehicle: {
+          include: {
+            owner: true,
+          },
         },
+        camera: true,
       },
-      camera: true,
+    }),
+    prisma.recognitionLog.count({ where }),
+  ]);
+
+  return {
+    logs,
+    pagination: {
+      page: cleanPage,
+      pageSize: cleanPageSize,
+      totalCount,
+      totalPages: Math.max(Math.ceil(totalCount / cleanPageSize), 1),
     },
-  });
+  };
 }
 
 async function getRecognitionSummary() {

@@ -16,13 +16,11 @@ async function login(username, password) {
     err.statusCode = 401;
     throw err;
   }
-
   if (!user.isActive) {
     const err = new Error("Tài khoản đã bị vô hiệu hóa.");
     err.statusCode = 403;
     throw err;
   }
-
   if (user.role === "PENDING") {
     const err = new Error("Tài khoản đang chờ admin phê duyệt.");
     err.statusCode = 403;
@@ -45,17 +43,17 @@ async function login(username, password) {
   return {
     token,
     user: {
-      id: user.id,
+      id:       user.id,
       username: user.username,
       fullName: user.fullName,
-      email: user.email,
-      role: user.role,
+      email:    user.email,
+      role:     user.role,
     },
   };
 }
 
-// ─── Đăng ký ──────────────────────────────────────────────────────────────────
-async function register(username, password, fullName, email) {
+// ─── Đăng ký — tự động tạo Owner cùng lúc ────────────────────────────────────
+async function register(username, password, fullName, email, phone) {
   // Kiểm tra trùng username
   const existingUsername = await prisma.user.findUnique({ where: { username } });
   if (existingUsername) {
@@ -64,7 +62,7 @@ async function register(username, password, fullName, email) {
     throw err;
   }
 
-  // Kiểm tra trùng email nếu có
+  // Kiểm tra trùng email
   if (email) {
     const existingEmail = await prisma.user.findUnique({ where: { email } });
     if (existingEmail) {
@@ -76,22 +74,39 @@ async function register(username, password, fullName, email) {
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  const user = await prisma.user.create({
-    data: {
-      username,
-      passwordHash,
-      fullName: fullName || null,
-      email: email || null,
-      role: "PENDING", // Mặc định chờ admin duyệt
-    },
+  // Dùng transaction: tạo Owner + User cùng lúc, đảm bảo không bị lỗi giữa chừng
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Tạo Owner
+    const owner = await tx.owner.create({
+      data: {
+        fullName: fullName || username,
+        email:    email    || null,
+        phone:    phone    || null,
+      },
+    });
+
+    // 2. Tạo User và gán thẳng owner_id
+    const user = await tx.user.create({
+      data: {
+        username,
+        passwordHash,
+        fullName: fullName || null,
+        email:    email    || null,
+        role:     "USER",  // USER thường, không cần PENDING
+        ownerId:  owner.id,
+      },
+    });
+
+    return { user, owner };
   });
 
   return {
-    id: user.id,
-    username: user.username,
-    fullName: user.fullName,
-    email: user.email,
-    role: user.role,
+    id:       result.user.id,
+    username: result.user.username,
+    fullName: result.user.fullName,
+    email:    result.user.email,
+    role:     result.user.role,
+    ownerId:  result.owner.id,
   };
 }
 
@@ -106,11 +121,13 @@ function verifyToken(token) {
   }
 }
 
-// ─── Lấy thông tin user hiện tại ─────────────────────────────────────────────
 async function getMe(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, fullName: true, email: true, role: true, createdAt: true },
+    select: {
+      id: true, username: true, fullName: true,
+      email: true, role: true, createdAt: true,
+    },
   });
   if (!user) {
     const err = new Error("Không tìm thấy tài khoản.");

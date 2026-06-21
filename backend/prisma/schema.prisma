@@ -27,6 +27,9 @@ model User {
   email        String?          @unique
   role         UserRole         @default(PENDING)
   isActive     Boolean          @default(true) @map("is_active")
+  // Gán user với chủ xe — admin set sau khi đăng ký
+  ownerId      Int?             @unique @map("owner_id")
+  owner        Owner?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   createdAt    DateTime         @default(now()) @map("created_at")
   updatedAt    DateTime         @updatedAt @map("updated_at")
   logs         RecognitionLog[]
@@ -41,6 +44,7 @@ model Owner {
   email     String?
   address   String?
   vehicles  Vehicle[]
+  user      User?
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 

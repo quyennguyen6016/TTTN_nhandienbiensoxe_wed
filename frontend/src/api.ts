@@ -68,6 +68,18 @@ export type RecognitionSummary = {
   recentLogs: RecognitionLog[];
 };
 
+export type Pagination = {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
+export type PaginatedLogs = {
+  logs: RecognitionLog[];
+  pagination: Pagination;
+};
+
 export type UploadRecognitionResponse = {
   recognition: {
     plate: string;
@@ -167,6 +179,37 @@ async function request<T>(path: string, init?: RequestInit) {
   return parseResponse<T>(response);
 }
 
+// ─── Như request() nhưng giữ lại field "pagination" từ response ──────────────
+async function requestWithPagination<T>(path: string, init?: RequestInit): Promise<{ data: T; pagination: Pagination }> {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
+
+  if (response.status === 401) {
+    sessionStorage.removeItem("pv_token");
+    sessionStorage.removeItem("pv_user");
+    window.location.reload();
+    throw new Error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+  }
+
+  const payload = (await response.json()) as ApiEnvelope<T> & { pagination?: Pagination };
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.message || "Yêu cầu không thành công.");
+  }
+
+  return {
+    data: payload.data,
+    pagination: payload.pagination || { page: 1, pageSize: 50, totalCount: 0, totalPages: 1 },
+  };
+}
+
 function queryString(params: Record<string, string | number | undefined>) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -198,17 +241,28 @@ export async function fetchRecognitionHistory(
     cameraId?: string;
     from?: string;
     to?: string;
-    limit?: number;
+    page?: number;
+    pageSize?: number;
   } = {}
 ) {
-  const logs = await request<RecognitionLog[]>(
-    `/api/recognitions${queryString({ limit: 50, ...filters })}`
+  const { data: logs, pagination } = await requestWithPagination<RecognitionLog[]>(
+    `/api/recognitions${queryString({ page: 1, pageSize: 50, ...filters })}`
   );
-  return logs.map(normalizeLog);
+  return { logs: logs.map(normalizeLog), pagination };
 }
 
 export async function deleteRecognition(id: number) {
   return request<void>(`/api/recognitions/${id}`, { method: "DELETE" });
+}
+
+// ─── USER: lịch sử nhận diện xe của riêng mình ────────────────────────────────
+// Dùng chung request() + normalizeLog() để imagePath/annotatedImagePath
+// được chuyển thành URL đầy đủ giống các hàm fetch khác.
+export async function fetchMyHistory(page = 1, pageSize = 50) {
+  const { data: logs, pagination } = await requestWithPagination<RecognitionLog[]>(
+    `/api/me/history${queryString({ page, pageSize })}`
+  );
+  return { logs: logs.map(normalizeLog), pagination };
 }
 
 export async function uploadPlateImage(

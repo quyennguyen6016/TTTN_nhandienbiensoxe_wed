@@ -7,6 +7,7 @@ const { parseId } = require("../utils/http-error");
 const { toPublicUploadPath } = require("../utils/paths");
 const { prisma } = require("../db/prisma");
 const { recognizeImage } = require("../services/ai.service");
+const { normalizePlateNumber } = require("../utils/plate");
 const {
   createRecognitionLog,
   getRecognitionSummary,
@@ -15,11 +16,12 @@ const {
 
 const router = express.Router();
 
+// ─── GET /api/recognitions — hỗ trợ ?page=&pageSize= ─────────────────────────
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const logs = await listRecognitionLogs(req.query);
-    res.json({ success: true, data: logs });
+    const { logs, pagination } = await listRecognitionLogs(req.query);
+    res.json({ success: true, data: logs, pagination });
   })
 );
 
@@ -45,6 +47,25 @@ router.get(
     res.json({ success: true, data: log });
   })
 );
+
+// ─── Helper: kiểm tra biển số có thuộc về user hiện tại không ─────────────────
+async function isPlateOwnedByUser(normalizedPlateNumber, userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, owner: { select: { id: true } } },
+  });
+
+  if (!user) return false;
+  if (user.role === "ADMIN") return true;
+  if (!user.owner) return false;
+
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { normalizedPlateNumber },
+    select: { ownerId: true },
+  });
+
+  return vehicle?.ownerId === user.owner.id;
+}
 
 router.post(
   "/image",
@@ -78,11 +99,34 @@ router.post(
       duplicateWindowSeconds: requestedSource === "CAMERA_FRAME" ? 10 : 0,
     });
 
+    const normalizedPlate = normalizePlateNumber(aiResponse.data.plate);
+    const ownsThisPlate = await isPlateOwnedByUser(normalizedPlate, req.user.userId);
+
+    let safeRecognition = aiResponse.data;
+    let safeLog = log;
+
+    if (!ownsThisPlate) {
+      safeRecognition = {
+        ...aiResponse.data,
+        location: null,
+        province_code: null,
+      };
+      safeLog = {
+        ...log,
+        province: null,
+        provinceCode: null,
+        ownerNameSnapshot: null,
+        vehicle: log.vehicle
+          ? { id: log.vehicle.id, plateNumber: log.vehicle.plateNumber, owner: null }
+          : null,
+      };
+    }
+
     res.status(201).json({
       success: true,
       data: {
-        recognition: aiResponse.data,
-        log,
+        recognition: safeRecognition,
+        log: safeLog,
         duplicateSkipped,
       },
     });
