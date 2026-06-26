@@ -21,11 +21,6 @@ async function login(username, password) {
     err.statusCode = 403;
     throw err;
   }
-  if (user.role === "PENDING") {
-    const err = new Error("Tài khoản đang chờ admin phê duyệt.");
-    err.statusCode = 403;
-    throw err;
-  }
 
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
   if (!passwordMatch) {
